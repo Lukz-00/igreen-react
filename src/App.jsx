@@ -5,6 +5,7 @@ import { Home } from './pages/Home'
 import { Faturamento } from './pages/Faturamento'
 import { Thopen } from './pages/Thopen'
 import { IVolt } from './pages/iVolt'
+import { GV } from './pages/iVolt/GV'
 import { Jornada } from './pages/Jornada'
 import { Boletos } from './pages/Boletos'
 
@@ -14,7 +15,7 @@ function Router() {
     home: <Home />,
     faturamento: <Faturamento />,
     thopen: <Thopen />,
-    'ivolt-gv': <IVolt />, 'ivolt-sunne': <IVolt />, 'ivolt-edp': <IVolt />,
+    'ivolt-gv': <GV />, 'ivolt-sunne': <IVolt />, 'ivolt-edp': <IVolt />,
     classificador: <Jornada />,
     boletos: <Boletos />,
   }

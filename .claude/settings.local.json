@@ -6,7 +6,12 @@
       "PowerShell(Get-ExecutionPolicy -List)",
       "Bash(where node *)",
       "PowerShell($env:Path = $env:Path + \";C:\\\\Program Files\\\\nodejs\"; Set-Location \"C:\\\\Users\\\\SUPORTE\\\\Desktop\\\\igreen-react\"; & \"C:\\\\Program Files\\\\nodejs\\\\npm.cmd\" run dev)",
-      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\SUPORTE\\\\Desktop\\\\igreen-react\\\\.github\\\\workflows\")"
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\SUPORTE\\\\Desktop\\\\igreen-react\\\\.github\\\\workflows\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\SUPORTE\\\\Desktop\\\\igreen-react\" -Filter \"pages\" -Directory)",
+      "PowerShell(Get-Process -Name node -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force -ErrorAction SilentlyContinue)",
+      "Bash(npm run *)",
+      "Read(//tmp/**)"
     ]
   }
 }

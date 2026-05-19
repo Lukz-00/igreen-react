@@ -284,7 +284,7 @@ function buildRowNorthenSemMatch(pag) {
 // "Incluir e dar Baixa": Pag = PAGO e Rec != PAGO
 function processarNorthen(rowsPagNorthen, rowsRec, onLog) {
   const log = msg => onLog && onLog(msg)
-  if (!rowsPagNorthen.length) return { naoExiste: [], existeEmAmbas: [], incluirBaixa: [], recConsumidos: new Set() }
+  if (!rowsPagNorthen.length) return { naoExiste: [], existeEmAmbas: [], incluirBaixa: [], matchPairs: [], pagOrfaos: [], recConsumidos: new Set() }
 
   const idxRec = {}
   rowsRec.forEach(r => {
@@ -345,7 +345,8 @@ export function fatCruzar(dfPag, dfRec, onLog) {
   // Cascata padrão — Rec já consumidos pelo Northen ficam fora
   const rowsRecDisponiveis = rowsRec.filter(r => !northen.recConsumidos.has(r))
 
-  const matchesTotais = [...northen.matchPairs]  // inclui matches Northen na classificação geral
+  // Cascata geral — Northen fica somente nos tabs dedicados
+  const matchesTotais = []
   const e1 = cascadeJoin(rowsPagOthers, rowsRecDisponiveis, '_uc_norm', '_uc_norm', 1, msg => log(msg))
   matchesTotais.push(...e1.matches)
   const e2 = cascadeJoin(e1.pagOrfaos, e1.recOrfaos, '_uc_norm', '_num_cliente_norm', 2, msg => log(msg))
@@ -353,7 +354,7 @@ export function fatCruzar(dfPag, dfRec, onLog) {
   const e3 = cascadeJoin(e2.pagOrfaos, e2.recOrfaos, '_uc_norm', '_cpf_norm', 3, msg => log(msg))
   matchesTotais.push(...e3.matches)
 
-  const pagOrfaosFinais = [...northen.pagOrfaos, ...e3.pagOrfaos]
+  const pagOrfaosFinais = e3.pagOrfaos
   const recOrfaosFinais = e3.recOrfaos
 
   log(`Total: ${matchesTotais.length} matches | Falta Rec: ${pagOrfaosFinais.length} | Falta Pag: ${recOrfaosFinais.length}`, 'ok')
@@ -439,10 +440,13 @@ export function fatCruzar(dfPag, dfRec, onLog) {
 
   log(`Divergência Cód.: ${divergenciasCod.length} | Sem Pagto/Valor: ${semPagtoValor.length}`, 'warn')
 
-  // Duplicidades — linhas com fingerprint idêntico na Pagadoria
+  // Duplicidades — linhas com fingerprint idêntico na Pagadoria (ignora campos internos _gmap_* e __)
   const fpMap = {}
   dfPag.forEach((row, i) => {
-    const fp = Object.values(row).map(v => String(v || '').trim().toLowerCase()).join('||')
+    const fp = Object.entries(row)
+      .filter(([k]) => !k.startsWith('_') && !k.startsWith('__'))
+      .map(([, v]) => String(v || '').trim().toLowerCase())
+      .join('||')
     ;(fpMap[fp] = fpMap[fp] || []).push(i)
   })
   const dupIdx = new Set()
@@ -513,7 +517,7 @@ export function fatCruzar(dfPag, dfRec, onLog) {
     northenExisteEmAmbas: northen.existeEmAmbas,
     northenIncluirBaixa:  northen.incluirBaixa,
     totalPag: dfPag.length, totalRec: dfRec.length,
-    emAmbos: matchesTotais.length,
+    emAmbos: matchesTotais.length + northen.matchPairs.length,
     soPag: pagOrfaosFinais.length, soRec: recOrfaosFinais.length,
   }
 }

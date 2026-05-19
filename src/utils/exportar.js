@@ -11,28 +11,50 @@ function clean(row) {
 
 export function exportarFaturamento(res) {
   const wb = XLSX.utils.book_new()
+
+  const temNorthen = (res.northenExisteEmAmbas||[]).length > 0
+    || (res.northenNaoExiste||[]).length > 0
+    || (res.northenIncluirBaixa||[]).length > 0
+
   const resumo = [
     ['Cruzamento Pagadoria x Recebíveis',''],
     ['Data', new Date().toLocaleDateString('pt-BR')],
     ['',''],
-    ['Resultado','Quantidade'],
+    ['GERAL','Quantidade'],
     ['UCs em ambas (matches)', res.emAmbos],
     ['Divergência Cód. Barras', (res.divergenciasCod||[]).length],
     ['Sem Pagto / Valor', (res.semPagtoValor||[]).length],
-    ['Status Divergentes', res.divergentes.length],
-    ['Falta nos Recebíveis', res.faltaRec.length],
-    ['Falta na Pagadoria', res.faltaPag.length],
-    ['Status Coincidentes', res.coincidentes.length],
+    ['Status Divergentes', (res.divergentes||[]).length],
+    ['Falta nos Recebíveis', (res.faltaRec||[]).length],
+    ['Falta na Pagadoria', (res.faltaPag||[]).length],
+    ['Status Coincidentes', (res.coincidentes||[]).length],
     ['Duplicidades', (res.duplicidadesPag||[]).length],
   ]
+
+  if (temNorthen) {
+    resumo.push(['',''])
+    resumo.push(['NORTHEN','Quantidade'])
+    resumo.push(['Não existe em Recebíveis', (res.northenNaoExiste||[]).length])
+    resumo.push(['Existe em Ambas',           (res.northenExisteEmAmbas||[]).length])
+    resumo.push(['Incluir / Dar Baixa',        (res.northenIncluirBaixa||[]).length])
+  }
+
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumo), 'RESUMO')
-  if((res.divergenciasCod||[]).length) XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(res.divergenciasCod.map(clean)),'DIVERGENCIA COD')
-  if((res.semPagtoValor||[]).length)   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(res.semPagtoValor.map(clean)),'SEM PAGTO E VALOR')
-  if(res.divergentes.length)           XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(res.divergentes.map(clean)),'STATUS DIVERGENTES')
-  if(res.faltaRec.length)              XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(res.faltaRec.map(clean)),'FALTA NOS RECEBIVEIS')
-  if(res.faltaPag.length)              XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(res.faltaPag.map(clean)),'FALTA NA PAGADORIA')
-  if(res.coincidentes.length)          XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(res.coincidentes.map(clean)),'COINCIDENTES')
-  if((res.duplicidadesPag||[]).length) XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(res.duplicidadesPag.map(clean)),'DUPLICIDADES')
+
+  // Abas gerais
+  if ((res.divergenciasCod||[]).length)  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.divergenciasCod.map(clean)),  'DIVERGENCIA COD')
+  if ((res.semPagtoValor||[]).length)    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.semPagtoValor.map(clean)),    'SEM PAGTO E VALOR')
+  if ((res.divergentes||[]).length)      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.divergentes.map(clean)),      'STATUS DIVERGENTES')
+  if ((res.faltaRec||[]).length)         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.faltaRec.map(clean)),         'FALTA NOS RECEBIVEIS')
+  if ((res.faltaPag||[]).length)         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.faltaPag.map(clean)),         'FALTA NA PAGADORIA')
+  if ((res.coincidentes||[]).length)     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.coincidentes.map(clean)),     'COINCIDENTES')
+  if ((res.duplicidadesPag||[]).length)  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.duplicidadesPag.map(clean)),  'DUPLICIDADES')
+
+  // Abas Northen
+  if ((res.northenNaoExiste||[]).length)     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.northenNaoExiste.map(clean)),     'NORTHEN NAO EXISTE')
+  if ((res.northenExisteEmAmbas||[]).length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.northenExisteEmAmbas.map(clean)), 'NORTHEN EXISTE EM AMBAS')
+  if ((res.northenIncluirBaixa||[]).length)  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.northenIncluirBaixa.map(clean)),  'NORTHEN INCLUIR BAIXA')
+
   XLSX.writeFile(wb, `cruzamento_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.xlsx`)
 }
 
