@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($env:PATH -split \";\" | Where-Object { $_ -match \"node|npm\" })",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; node -v; npm -v)",
+      "PowerShell(Get-ExecutionPolicy -List)",
+      "Bash(where node *)",
+      "PowerShell($env:Path = $env:Path + \";C:\\\\Program Files\\\\nodejs\"; Set-Location \"C:\\\\Users\\\\SUPORTE\\\\Desktop\\\\igreen-react\"; & \"C:\\\\Program Files\\\\nodejs\\\\npm.cmd\" run dev)",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\SUPORTE\\\\Desktop\\\\igreen-react\\\\.github\\\\workflows\")"
+    ]
+  }
+}
