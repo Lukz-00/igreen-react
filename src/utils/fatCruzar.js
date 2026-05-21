@@ -5,6 +5,23 @@
 // ═══════════════════════════════════════════════════════════════
 import { normUC, normalizarMes, fmtData, fmtValor, getField } from './normalizadores'
 
+// Retorna o primeiro valor que parece um código de barras real (≥ 20 dígitos)
+// Usa busca fuzzy igual ao getField para lidar com variações de acento/capitalização
+function getBarcodeField(r, aliases) {
+  const rKeys = Object.keys(r)
+  const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+  for (const alias of aliases) {
+    let k = rKeys.find(k => norm(k) === norm(alias))
+    if (!k) k = rKeys.find(k => norm(k).includes(norm(alias)))
+    if (k === undefined) continue
+    const v = r[k]
+    if (v === null || v === undefined || v === '') continue
+    const s = String(v).trim()
+    if (s.replace(/\D/g, '').length >= 20) return s
+  }
+  return ''
+}
+
 // ── Status Pagadoria ───────────────────────────────────────────
 function statusPag(v) {
   const u = String(v || '').trim().toUpperCase()
@@ -120,10 +137,10 @@ function extrairPag(r) {
       'Data Pagamento','DataPagamento',
       'dtpagamento','Pagto fatura','PagtoFatura',
     ])),
-    codBar: getField(r, [
-      'Código de barras','Codigo de barras',       // Solatio/Northen
+    codBar: getBarcodeField(r, [
+      'Código de barras','Codigo de barras',
       'CodigoBarras','codigobarra',
-      'Codigo Barra Boleto',                       // BackOffice
+      'Codigo Barra Boleto',
     ]),
     linkBoleto: getField(r, [
       'Link de pagamento',                         // Solatio
@@ -174,7 +191,7 @@ function extrairRec(r) {
     ])),
     venc:  fmtData(getField(r, ['Data Vencimento','DataVencimento','dtvencimento','Vencimento fatura','VencimentoFatura','Data de vencimento'])),
     pagto: fmtData(getField(r, ['Data Pagamento','DataPagamento','dtpagamento','Pagto fatura','PagtoFatura','Data de pagamento'])),
-    codBar:     getField(r, ['Codigo Barra Boleto','CodigoBarraBoleto','Linha Digitavel','codigobarra','Código de barras','Codigo de barras']),
+    codBar:     getBarcodeField(r, ['Codigo Barra Boleto','CodigoBarraBoleto','Linha Digitavel','codigobarra','Código de barras','Codigo de barras']),
     statusRaw:  getField(r, [
       '_gmap_status',
       'Status Financeiro Cliente','StatusFinanceiroCliente',
@@ -388,17 +405,20 @@ export function fatCruzar(dfPag, dfRec, onLog) {
   const divergentes = [], coincidentes = [], divergenciasCod = [], semPagtoValor = []
   const vazio = v => !v || v === '—' || String(v).trim() === ''
 
-  matchesTotais.forEach(({ pag, rec }) => {
+  const normCod = s => String(s || '').replace(/\D/g, '')
+
+  matchesTotais.forEach(({ pag, rec, etapa }) => {
     const sp = statusPag(pag.statusRaw)
     const sr = statusRec(rec.statusRaw)
     const row = buildRow(pag, rec)
     if (ehDivergente(sp, sr)) divergentes.push(row)
     else coincidentes.push(row)
 
-    // Divergência cód. barras
-    const cbP = (pag.codBar || '').replace(/\s/g, '')
-    const cbR = (rec.codBar || '').replace(/\s/g, '')
-    if (cbP && cbR && cbP !== cbR) {
+    // Divergência cód. barras — só compara etapa 1 (UC × UC, mesmo cliente)
+    // Etapas 2/3 cruzam por NumeroCliente ou CPF — pares de clientes diferentes, barcode não é comparável
+    const cbP = normCod(pag.codBar)
+    const cbR = normCod(rec.codBar)
+    if (etapa === 1 && cbP.length >= 20 && cbR.length >= 20 && cbP !== cbR) {
       divergenciasCod.push({
         'UC (Pagadoria)':    pag.ucRaw, 'UC (Recebíveis)': rec.ucRaw,
         'ID Recebimento':    pag.idRecebimento || rec.idRcb || '—',
@@ -455,11 +475,18 @@ export function fatCruzar(dfPag, dfRec, onLog) {
   dfPag.forEach((row, i) => {
     if (!dupIdx.has(i)) return
     duplicidadesPag.push({
-      'UC':          getField(row, ['_gmap_instalacao','Instalação (Identificador)','UC','Instalacao','Instalação','instalacao']),
-      'Cliente':     getField(row, ['Favorecido','Nome','nome_cliente','Cliente','Consorciado']),
-      'Mês':         fmtData(getField(row, ['_gmap_mes','Mês','Mês de referência','mes_referencia','Data Referencia'])),
-      'Status':      getField(row, ['_gmap_status','Situação do recebimento','Status','Status fatura','statuspagamentofornecedora']),
-      'Valor':       fmtValor(getField(row, ['_gmap_valor','Valor total (R$)','Valor da Fatura','Valor fatura','Valor','valorapagar'])),
+      '[PAG] UC':              getField(row, ['_gmap_instalacao','Instalação (Identificador)','UC','Instalacao','Instalação','instalacao']),
+      '[PAG] ID Recebimento':  getField(row, ['Recebimento (Identificador)','ID Recebimento','id_recebimento','Nº do documento']),
+      '[PAG] Cliente':         getField(row, ['Favorecido','Nome','nome_cliente','Cliente','Consorciado']),
+      '[PAG] CPF/CNPJ':        getField(row, ['CPF/CNPJ','CPF','CNPJ','cpf','cpf_cliente','documento']),
+      '[PAG] Mês Referência':  fmtData(getField(row, ['_gmap_mes','Mês de referência','Mês','Mes referência','Mes Referencia','Data Referencia','mes_referencia'])),
+      '[PAG] Status':          getField(row, ['_gmap_status','Situação do recebimento','Status','Status fatura','statuspagamentofornecedora']),
+      '[PAG] Valor':           fmtValor(getField(row, ['_gmap_valor','Valor total (R$)','Valor da Fatura','Valor fatura','Valor','valorapagar'])),
+      '[PAG] Valor Pago':      fmtValor(getField(row, ['Valor pago pelo cliente (R$)','Valor Pago','valor_pago'])),
+      '[PAG] Vencimento':      fmtData(getField(row, ['Vencimento Fatura Norten','Data de vencimento','Data Vencimento','dtvencimento'])),
+      '[PAG] Data Pagamento':  fmtData(getField(row, ['Data de recebimento','Data de pagamento','Data Pagamento','dtpagamento'])),
+      '[PAG] Cód. Barras':     getField(row, ['Código de barras','Codigo de barras','CodigoBarras','codigobarra','Codigo Barra Boleto']),
+      '[PAG] Link Boleto':     getField(row, ['Link de pagamento','Arquivo do recebimento','Link Boleto','link_boleto','Url Boleto','url_boleto']),
     })
   })
   log(`Duplicidades: ${duplicidadesPag.length} registros`, 'warn')
