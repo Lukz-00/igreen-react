@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext'
 const MENU = [
   { id:'home', label:'Visão Geral', icon:Home, tipo:'item' },
   { tipo:'divider' },
-  { id:'injecao', label:'Análise de Injeção', icon:BarChart2, tipo:'grupo', filhos:[
+  { id:'injecao', label:'Conciliação de Base', icon:BarChart2, tipo:'grupo', filhos:[
     { id:'ivolt-gv',    label:'GV / Northen' },
     { id:'ivolt-sunne', label:'SUNNE' },
     { id:'ivolt-edp',   label:'EDP' },
@@ -13,7 +13,7 @@ const MENU = [
     { id:'thopen', label:'Thopen — Atraso' },
   ]},
   { id:'financeiro', label:'Operações Financeiras', icon:TrendingUp, tipo:'grupo', filhos:[
-    { id:'faturamento', label:'Cruzamento Pagadoria' },
+    { id:'faturamento', label:'Pagadoria' },
   ]},
   { id:'jornada', label:'Jornada do Cliente', icon:Users, tipo:'grupo', filhos:[
     { id:'classificador', label:'Classificador de Status' },
@@ -76,6 +76,7 @@ export function Sidebar() {
                           className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-all mb-0.5
                             ${ativo?'bg-acc/15 text-acc font-semibold':'text-tx3 hover:text-tx hover:bg-white/5'}`}>
                           {f.label}
+                          {f.sub && <div className="text-[10px] opacity-60 font-normal mt-0.5">{f.sub}</div>}
                         </button>
                       )
                     })}

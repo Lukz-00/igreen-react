@@ -55,7 +55,16 @@ export function exportarFaturamento(res) {
   if ((res.northenExisteEmAmbas||[]).length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.northenExisteEmAmbas.map(clean)), 'NORTHEN EXISTE EM AMBAS')
   if ((res.northenIncluirBaixa||[]).length)  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.northenIncluirBaixa.map(clean)),  'NORTHEN INCLUIR BAIXA')
 
-  XLSX.writeFile(wb, `cruzamento_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.xlsx`)
+  const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+  const blob = new Blob([buf], { type: 'application/octet-stream' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `cruzamento_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.xlsx`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 export function lerXlsx(file) {
