@@ -11,7 +11,18 @@
       "PowerShell(Get-Process -Name node -ErrorAction SilentlyContinue)",
       "PowerShell(Stop-Process -Force -ErrorAction SilentlyContinue)",
       "Bash(npm run *)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(pkill -f \"vite\" 2>/dev/null; sleep 1; npm run dev > /tmp/dev-server.log 2>&1 & *)",
+      "Bash(netstat -ano)",
+      "PowerShell(Stop-Process -Id 14288,10788 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Write-Host \"5173 limpo\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5174 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Write-Host \"5174 limpo\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5173,5174,5175 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Write-Host \"Portas limpas\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5173,5174,5175 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Write-Host \"OK\")"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
     ]
   }
 }
